@@ -1,0 +1,67 @@
+java遍历网页里面的所有超链接，把这些超链接链接到得网页下载下来。
+有一个开源的裤：htmlparser足够你用的了！
+1、 简介
+htmlparser是一个纯的java写的html解析的库，它不依赖于其它的java库文件，主要用于改造或提取html。它提供了接口，支持线性和嵌套HTML文本。在实际的项目中只需要将htmlparser.jar 导入classpath中，就可以使用HTMLParser提供的API了。  
+2、 主要应用
+
+HTML Parser项目主要可以用在以下两个方面：  
+1． 信息提取  
+· 文本信息抽取，例如对HTML进行有效信息搜索  
+· 链接提取，用于自动给页面的链接文本加上链接的标签  
+· 资源提取，例如对一些图片、声音的资源的处理  
+· 链接检查，用于检查HTML中的链接是否有效  
+· 页面内容的监控  
+2． 信息转换  
+· 链接重写，用于修改页面中的所有超链接  
+· 网页内容拷贝，用于将网页内容保存到本地  
+· 内容检验，可以用来过滤网页上一些令人不愉快的字词  
+· HTML信息清洗，把本来乱七八糟的HTML信息格式化  
+· 转成XML格式数据  
+3、 数据组织分析
+
+HTML有3种类型的节点：RemarkNode：html中的注释，TagNode：标签节点，TextNode：文本节点。HTMLParser将读取的二进制数据流，进行编码转换、词法分析等操作，生成树形层次结构的Node节点集合。
+HtmlParser主要靠Node和Tag来表达Html。
+
+Node是形成树结构表示HTML的基础，所有的数据表示都是接口Node的实现，Node定义了与页面树结构所表达的页面Page对象，定义了获取父、子、兄弟节点的方法，定义了节点到对应html文本的方法，定义了该节点对应的起止位置，定义了过滤方法 ，定义了Visitor访问机制。AbstractNode是Node的一种具体的类实现，起到构成树形结构的作用，除了同具体Node相关的accetp方法，toString，toHtml，toPlainTextString方法以外，AbstractNode实现了大多基本的方 法，使得它的子类，不用理会具体的树操作。
+Node分成三类：
+§ RemarkNode:代表Html中的注释  
+§ TagNode：标签节点，是种类最多的节点类型，上述Tag的具体节点类都是TagNode的实现。  
+§ TextNode：文本节点
+Tag是具体分析的主要内容。Tag分成composite的Tag和不能包含其他Tag的简单Tag两类，其中前者的基类是CompositeTag，其子类包含BodyTag,Div,FrameSetTag,OptionTag，等27个子类 ；而简单Tag有BaseHrefTag、DoctypeTag,FrameTag，ImageTag，InputTag，JspTag，MetaTag，ProcessingInstructionTag这八类。
+
+4、Visitor方式访问Html：
+(1)、整体解析过程
+§ 用一个URL或页面String做一个Parser  
+§ 用这个Parser做一个Visitor  
+§ 使用Parser.visitAllNodeWith(Visitor)来遍历节点  
+§ 获取Visitor遍历后得到的数据  
+(2)、系统Visitor功能简介：
+§ ObjectFindingVisitor：用来找出所有指定类型的节点，采用getTags()来获取结果。  
+§ StringBean：用来从一个指定的URL获取移除了<SCRIPT></SCRIPT>和<PRE></PRE>之间代码的Html代码，也可以用做Visitor，用来移除这两种标签内部的代码，采用StringBean.getStrings()来获取结果。  
+§ HtmlPage：提取Title，body中的节点和页面中的TableTag节点。  
+§ LinkFindingVisitor:找出节点中包含某个链接的总个数。  
+§ StringFindingVisitor：找出遍历的TextNode中含有指定字符串的个数。  
+§ TagFindingVisitor：找出指定Tag的所有节点，可以指定多种类型。  
+§ TextExtractingVisitor：从网页中把所有标签去掉来提取文本，这个提取文本的Visitor有时是很实用的 ，只是注意在提取文本时将标签的属性也去掉了，也就是说只剩下标签之间的文本，例如<a>中的链接也去掉了。  
+§ UrlModifyingVisitor：用来修改网页中的链接。
+(3)、Filter
+如果说visitor是遍历提取信息，当然这个信息可以包括某些节点或者从节点分析出来的更有效的信息，这都取决于我们的Visitor做成什么样子，那么Filter则目标很明确，就是用来提取节点的。
+系统定义了17种具体的Filter，包括依据节点父子关系的Filter，连接Filter组合的Filter，依据网页内容匹配情况的filter，等等。我们也可以implement Filter来做自己的Filter来提取节点。
+Filter的调用是同Visitor独立的，因为也无需先filter出一些NodeList，再用Visitor来访问。调用Filter的方法是：
+NodeList nodeList = myParser.parse(someFilter);
+解析之后，我们可以采用：
+Node[] nodes = nodeList.toNodeArray();
+来获取节点数组，也可以直接访问：
+Node node = nodeList.elementAt(i)来获取Node。
+另外，在Filter后得到NodeList以后，我们仍然可以使用NodeList的extractAllNodesThatMatch (someFilter)来进一步过滤，同时又可以用NodeList的isitAllNodesWith(someVisitor)来做进一步的访问。
+
+这样，我们可以看到HtmlParser为我们提供了非常方便的Html解析方式，针对不同的应用可以采用visitor来遍历Html节点提取数据，也可以用Filter来过滤节点，提取出我们所关注的节点，再对节点进行处理。通过这样的组合，一定能够找出我们所需要的信息。
+
+5、乱码问题
+对于HTMLParser 工具包我们需要修改其中的htmlparser.java文件使其适用中文的html文件分析。htmlparser.java文件中具体实现细节就不再介绍。这里主要是把protected static final String DEFAULT_CHARSET = "ISO-8859-1"；修改成protected static final String DEFAULT_CHARSET = "gb2312"；因为采用默认的字符集"ISO-8859-1"对含有中文的html文件进行分析的时候就会出现乱码。必须进行new String(str.getBytes("ISO-8859-1")，"GB2312")的转换工作。对于修改好的htmlparser工具包，需要重新压缩成.jar文件，放到jdk的工作环境中。
+
+6、自定义标签：
+注意这个类PrototyicalNodeFactory，首先创建一个它的实例，然后注册你说自定义的Tag，再将这个工厂放置到你的parser中：  
+factory.registerTag(new IFrameTag());  
+parser.setNodeFactory(factory);  
+然后你再试试看，保证能够解析到你想要得那些标准htmlparser不支持的tag。
